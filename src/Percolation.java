@@ -5,31 +5,31 @@
 
 public class Percolation {
     //true = open false = closed
-    boolean grid[][], otherGrid[];
-    int openedSites = 0;
-    WeightedQuickUnionUF weightedQuickUnionUF;
-    int N, init;
-    double fractionOpen;
+    private boolean otherGrid[];
+    private double openedSites = 0;
+    private WeightedQuickUnionUF weightedQuickUnionUF;
+    private int N, init;
+    private double fractionOpen;
 
     // create N-by-N grid, with all sites blocked
     public Percolation(int N) {
             if( N <= 0){
                 throw new java.lang.IllegalArgumentException("N must be > 0");
             }
-            this.init = (N*N) + (2*N);
+            this.init = (N*N) + N;
             weightedQuickUnionUF = new WeightedQuickUnionUF(this.init);
 
             //java primitive boolean is set to false by default...
-            this.grid = new boolean[N+2][N];
             this.otherGrid = new boolean[this.init];
-            //set top and bottom rows to connected
+            this.N = N;
+            //connect top
             for(int  j= 0; j < N; j++){
                 //top
                 weightedQuickUnionUF.union(0,j);
-                //bottom
-                weightedQuickUnionUF.union((N*N) + N, (N*N) + (N + j));
             }
-        this.N = N;
+            for(int i = 0; i < N; i++){
+                this.otherGrid[i] = true;
+            }
     }
 
     private void checkInputs(int i, int j){
@@ -44,30 +44,48 @@ public class Percolation {
     // open site (row i, column j) if it is not open already
     public void open(int i, int j){
         checkInputs(i,j);
-        this.grid[i][j-1] = true;
         int site = N*i + j - 1;
-        this.otherGrid[site] = true;
-        openedSites++;
+        //if not open, open and incrementcounter of opened sites
+        if(!this.otherGrid[site]){
+            this.otherGrid[site] = true;
+            openedSites++;
+        }
+
         unionFlow(i, j, site);
     }
 
     private void unionFlow(int i, int j, int site) {
+        checkInputs(i,j);
         //check for left most
-        if(i % N != 0){
+        if(i != 1){
             if(this.isOpen(i-1,j)){
-                weightedQuickUnionUF.union(site, site - 1);
+                weightedQuickUnionUF.union(site - 1, site);
             }
         }
         //check for right most
-        if(i % (N +1) != 0){
-            if(this.isOpen(i-1,j)){
-                weightedQuickUnionUF.union(site, site + 1);
+        if(i != N){
+            if(this.isOpen(i+1,j)){
+                weightedQuickUnionUF.union(site + 1, site);
             }
         }
         //below
-        weightedQuickUnionUF.union(site, site + N);
+        if(j == 1){
+            weightedQuickUnionUF.union(site, site - N);
+        } else{
+            if(this.isOpen(i,j-1)){
+                weightedQuickUnionUF.union(site, site - N);
+            }
+        }
+
         //above
-        weightedQuickUnionUF.union(site, site - N);
+        if(j != N) {
+            if (this.isOpen(i, j + 1)) {
+                weightedQuickUnionUF.union(site, site + N);
+            }
+        }
+
+
+
     }
 
     // is site (row i, column j) open?
@@ -86,8 +104,18 @@ public class Percolation {
     }
     // does the system percolate?
     public boolean percolates(){
-        boolean isPercolating = weightedQuickUnionUF.connected(0,this.init - 1);
-        this.fractionOpen = this.openedSites/this.N;
+        boolean isPercolating = false;
+        for(int i = this.init - this.N - 1; i < this.init; i++){
+            isPercolating = weightedQuickUnionUF.connected(0,i);
+            //break on true
+            if(isPercolating){
+                break;
+            }
+        }
+        if(isPercolating){
+            this.fractionOpen = this.openedSites/(this.N * this.N);
+        }
+
         //first connected to last.
         return isPercolating;
     }

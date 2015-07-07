@@ -1,6 +1,6 @@
 public class PercolationStats {
     private int N, T;
-    private double mean, stdDev, ninetyFivePercentConfidence;
+    private double mean = 0, stdDev, ninetyFivePercentConfidence;
     public int getN() {
         return N;
     }
@@ -34,11 +34,12 @@ public class PercolationStats {
         for(Percolation p : percolation){
             runExperiment(p);
         }
+
         for(Percolation p : percolation){
             this.mean += p.fractionOpen;
         }
         //computes mean
-        this.mean /= percolation.length;
+        this.mean = this.mean/percolation.length;
         //finds std dev
         for(Percolation p : percolation){
             this.stdDev += Math.pow((p.fractionOpen - this.mean), 2);
@@ -53,7 +54,7 @@ public class PercolationStats {
         return this.mean;
     }
 
-    // sample standard deviation of percolation threshold
+    // sample standard deviation of perco
     public double stddev(){
         return stdDev;
     }
@@ -64,25 +65,29 @@ public class PercolationStats {
 
     // high endpoint of 95% confidence interval
     public double confidenceHi(){
-        return this.mean - this.ninetyFivePercentConfidence;
+        return this.mean + this.ninetyFivePercentConfidence;
     }
 
         private void runExperiment(Percolation p){
+            int counter = 0;
             while(!p.percolates()){
-                //god, why have you forsaken me. this logic should be in percolation.java, but i'm forced to a predefined api.
-                int x = StdRandom.uniform(1, p.N);
-                /*int y = StdRandom.uniform(p.N, p.init - p.N);*/
-                int y = StdRandom.uniform(1, p.N);
+                int x = StdRandom.uniform(this.N);
+                int y = StdRandom.uniform(this.N);
+                if(x == 0){
+                    x++;
+                }
+                if(y == 0){
+                    y++;
+                }
                 p.open(x, y);
+                counter++;
             }
-
+            //System.out.println("Experiment # complete. # of sites opened: " + counter);
         }
 
     // test client (described below)
     public static void main(String[] args)   {
-        //int arg1 = StdIn.readInt(), arg2 = StdIn.readInt();
-        int arg1 = 5, arg2 = 25;
-        PercolationStats percolationStats = new PercolationStats(arg1, arg2);
+        PercolationStats percolationStats = new PercolationStats(Integer.parseInt(args[0]), Integer.parseInt(args[1]));
         System.out.println("Mean: " + percolationStats.mean());
         System.out.println("Standard Deviation: " + percolationStats.stddev());
         System.out.println("95% confidence level high " + percolationStats.confidenceHi());
